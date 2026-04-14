@@ -1,0 +1,19 @@
+{
+  "name": "vidflow",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:electron": "pnpm -F @vidflow/electron dev",
+    "build:core": "pnpm -F @vidflow/core build",
+    "build:electron": "pnpm -F @vidflow/electron build",
+    "lint": "eslint . --fix",
+    "format": "prettier --write .",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.5.0"
+  },
+  "packageManager": "pnpm@9.0.0"
+}
