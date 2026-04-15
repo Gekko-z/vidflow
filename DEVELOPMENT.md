@@ -312,7 +312,32 @@ f2 中这些算法以 JS 文件存在，通过 `PyExecJS` 执行。移植到 TS 
 
 **代码状态**：`a163cce` 已推送到 `Gekko-z/vidflow`，待提交本次修复
 
-### Phase 2: Electron GUI — Cookie 自动获取 + Twitter/X 下载 🔴 未开始
+### Phase 2: Electron GUI — Cookie 自动获取 + Twitter/X 下载 🟡 开发完成，待测试
+
+**新增文件**：
+- `packages/core/src/platforms/twitter/` — Twitter 平台适配层（API端点、URL解析、Crawler、Parser）
+- `packages/core/src/downloader/index.ts` — 下载器（单文件下载 + 断点续传 + 并发下载）
+- 扩展 `packages/core/src/types/index.ts` — TwitterCredentials, TweetData, TweetMediaItem 等类型
+
+**修改文件**：
+- `packages/electron/src/main/index.ts` — WebView 登录窗口 + Cookie 自动提取 + 下载处理
+- `packages/electron/src/main/preload.ts` — 新增 openLoginWindow, checkLoginStatus, onLoginSuccess, onDownloadProgress
+- `packages/electron/src/renderer/App.tsx` — 完整下载 UI（登录状态、URL 输入、下载进度）
+- `packages/electron/src/renderer/vite-env.d.ts` — 新类型声明
+
+**Phase 2 功能**：
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| Twitter API 端点 | 🟢 | GraphQL 端点常量（从 f2 api.py 移植） |
+| Twitter URL 解析 | 🟢 | tweet_id / unique_id 正则提取 |
+| TwitterCrawler | 🟢 | fetchTweetDetail, fetchUserProfile, fetchUserTweets, fetchLikes, fetchBookmarks |
+| 响应解析 | 🟢 | 动态 instruction 索引查找，适配 API 结构变化，统一媒体解析 |
+| WebView 登录 | 🟢 | 独立窗口加载 x.com/login，登录完成自动关闭 |
+| Cookie 自动提取 | 🟢 | session.cookies.get() 提取 cookie + ct0 (X-Csrf-Token) |
+| 下载器 | 🟢 | 视频下载 + 图片下载 + 文案保存，支持断点续传 |
+| 下载管理 UI | 🟢 | 粘贴链接 → 下载 → 进度条显示 |
+
+### Phase 3: 抖音平台 🔴 未开始
 
 ### Phase 3: 抖音平台 🔴 未开始
 
@@ -326,9 +351,7 @@ f2 中这些算法以 JS 文件存在，通过 `PyExecJS` 执行。移植到 TS 
 
 ## 下一步行动
 
-1. **解决 Electron 依赖安装** — 配置镜像源，`pnpm install` 完成
-2. **验证构建** — `pnpm build:core` + `pnpm dev:electron` 确保可运行
-3. **提交 Phase 1 代码** — 提交并推送到 GitHub
-4. **Phase 2 开始** — Twitter 平台适配 + Electron WebView 登录 + Cookie 自动提取 + 下载 UI
+1. **Phase 2 测试** — 用户测试 WebView 登录 Twitter + Cookie 提取 + 下载推文
+2. **Phase 3** — 抖音平台适配（API + 签名 + GUI 支持）
 
-*最后更新: 2026-04-14*
+*最后更新: 2026-04-15*
