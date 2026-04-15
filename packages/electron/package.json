@@ -5,9 +5,10 @@
   "description": "VidFlow Electron GUI",
   "main": "dist/main/index.js",
   "scripts": {
-    "dev": "concurrently \"npm run dev:main\" \"npm run dev:renderer\"",
+    "dev": "concurrently \"npm run dev:main\" \"npm run dev:renderer\" \"npm run dev:electron:launch\"",
     "dev:main": "tsc -p src/main/tsconfig.json --watch",
     "dev:renderer": "vite",
+    "dev:electron:launch": "electron dist/main/index.js",
     "build": "npm run build:main && npm run build:renderer",
     "build:main": "tsc -p src/main/tsconfig.json",
     "build:renderer": "vite build",

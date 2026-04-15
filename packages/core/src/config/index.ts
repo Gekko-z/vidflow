@@ -76,7 +76,7 @@ function deepMerge<T extends Record<string, unknown>>(
   target: T,
   source: Partial<T>,
 ): T {
-  const result = { ...target };
+  const result: Record<string, unknown> = { ...target };
 
   for (const key of Object.keys(source)) {
     const sourceValue = source[key];
@@ -93,13 +93,13 @@ function deepMerge<T extends Record<string, unknown>>(
       result[key] = deepMerge(
         targetValue as Record<string, unknown>,
         sourceValue as Record<string, unknown>,
-      ) as T[Extract<keyof T, string>];
+      );
     } else if (sourceValue !== null && sourceValue !== '') {
       result[key] = sourceValue;
     }
   }
 
-  return result;
+  return result as T;
 }
 
 /**
