@@ -312,7 +312,13 @@ f2 中这些算法以 JS 文件存在，通过 `PyExecJS` 执行。移植到 TS 
 
 **代码状态**：`a163cce` 已推送到 `Gekko-z/vidflow`，待提交本次修复
 
-### Phase 2: Electron GUI — Cookie 自动获取 + Twitter/X 下载 🟡 开发完成，待测试
+### Phase 2: Electron GUI — Cookie 自动获取 + Twitter/X 下载 🟡 待用户测试
+
+**已编译通过**，需要用户测试以下流程：
+1. 点击 Login 按钮 → WebView 窗口弹出
+2. WebView 中登录 Twitter/X
+3. 登录完成后自动关闭，主窗口显示"Logged in"
+4. 粘贴推文 URL → Download → 视频/图片下载完成
 
 **新增文件**：
 - `packages/core/src/platforms/twitter/` — Twitter 平台适配层（API端点、URL解析、Crawler、Parser）

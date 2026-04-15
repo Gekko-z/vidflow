@@ -296,3 +296,20 @@ ipcMain.handle('check-login-status', async () => {
     isLoggedIn: !!twitterCredentials,
   };
 });
+
+ipcMain.handle('get-credentials-info', async () => {
+  if (!twitterCredentials) {
+    return { isLoggedIn: false };
+  }
+  // Show cookie names and auth_token preview for debugging
+  const cookieParts = twitterCredentials.cookie.split('; ');
+  const cookieNames = cookieParts.map(p => p.split('=')[0]).filter(Boolean);
+  const authToken = cookieParts.find(p => p.startsWith('auth_token='))?.slice(11, 30) + '...';
+  return {
+    isLoggedIn: true,
+    cookieNames,
+    auth_token_preview: authToken || '(not found)',
+    ct0_preview: twitterCredentials.xCsrfToken.slice(0, 20) + '...',
+    cookie_length: twitterCredentials.cookie.length,
+  };
+});

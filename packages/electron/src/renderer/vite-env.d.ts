@@ -9,6 +9,13 @@ interface ElectronAPI {
   onDownloadProgress: (
     callback: (data: { filename: string; progress: number; state: string; error?: string }) => void,
   ) => void;
+  getCredentialsInfo: () => Promise<{
+    isLoggedIn: boolean;
+    cookieNames?: string[];
+    auth_token_preview?: string;
+    ct0_preview?: string;
+    cookie_length?: number;
+  }>;
 }
 
 declare global {

@@ -19,4 +19,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ) => {
     ipcRenderer.on('download-progress', (_event, data) => callback(data));
   },
+  getCredentialsInfo: () => ipcRenderer.invoke('get-credentials-info'),
 });

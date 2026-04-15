@@ -13,14 +13,23 @@ function App() {
   const [saveDir, setSaveDir] = useState('/Users/gekko/Downloads');
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [credentialsInfo, setCredentialsInfo] = useState<Record<string, string> | null>(null);
 
   useEffect(() => {
     window.electronAPI.checkLoginStatus().then(({ isLoggedIn }) => {
       setIsLoggedIn(isLoggedIn);
+      if (isLoggedIn) {
+        window.electronAPI.getCredentialsInfo().then((info) => {
+          setCredentialsInfo(info as unknown as Record<string, string>);
+        });
+      }
     });
 
     window.electronAPI.onLoginSuccess(() => {
       setIsLoggedIn(true);
+      window.electronAPI.getCredentialsInfo().then((info) => {
+        setCredentialsInfo(info as unknown as Record<string, string>);
+      });
     });
 
     window.electronAPI.onDownloadProgress((data) => {
@@ -116,6 +125,31 @@ function App() {
           </button>
         )}
       </div>
+
+      {/* Cookie debug info */}
+      {isLoggedIn && credentialsInfo && (
+        <div
+          style={{
+            padding: 12,
+            marginBottom: 20,
+            background: '#fffbeb',
+            border: '1px solid #fde68a',
+            borderRadius: 8,
+            fontSize: 12,
+            fontFamily: 'monospace',
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 6, fontSize: 13 }}>
+            Cookie Debug
+          </div>
+          <div>Cookies: {credentialsInfo.cookie_length || 0} bytes</div>
+          <div>auth_token: {credentialsInfo.auth_token_preview || '(not found)'}</div>
+          <div>ct0: {credentialsInfo.ct0_preview || '(not found)'}</div>
+          <div style={{ marginTop: 4, wordBreak: 'break-all' }}>
+            Cookie names: {(credentialsInfo.cookieNames as string[] | undefined)?.join(', ') || 'N/A'}
+          </div>
+        </div>
+      )}
 
       {/* URL input */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
