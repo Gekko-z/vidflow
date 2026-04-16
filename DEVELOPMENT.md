@@ -312,13 +312,9 @@ f2 中这些算法以 JS 文件存在，通过 `PyExecJS` 执行。移植到 TS 
 
 **代码状态**：`a163cce` 已推送到 `Gekko-z/vidflow`，待提交本次修复
 
-### Phase 2: Electron GUI — Cookie 自动获取 + Twitter/X 下载 🟡 待用户测试
+### Phase 2: Electron GUI — Cookie 自动获取 + Twitter/X 下载 ⚠️ 有阻塞
 
-**已编译通过**，需要用户测试以下流程：
-1. 点击 Login 按钮 → WebView 窗口弹出
-2. WebView 中登录 Twitter/X
-3. 登录完成后自动关闭，主窗口显示"Logged in"
-4. 粘贴推文 URL → Download → 视频/图片下载完成
+**已编译通过**，正在调试 Twitter API 403 问题
 
 **新增文件**：
 - `packages/core/src/platforms/twitter/` — Twitter 平台适配层（API端点、URL解析、Crawler、Parser）
@@ -326,9 +322,9 @@ f2 中这些算法以 JS 文件存在，通过 `PyExecJS` 执行。移植到 TS 
 - 扩展 `packages/core/src/types/index.ts` — TwitterCredentials, TweetData, TweetMediaItem 等类型
 
 **修改文件**：
-- `packages/electron/src/main/index.ts` — WebView 登录窗口 + Cookie 自动提取 + 下载处理
-- `packages/electron/src/main/preload.ts` — 新增 openLoginWindow, checkLoginStatus, onLoginSuccess, onDownloadProgress
-- `packages/electron/src/renderer/App.tsx` — 完整下载 UI（登录状态、URL 输入、下载进度）
+- `packages/electron/src/main/index.ts` — WebView 登录窗口 + Cookie 自动提取 + 下载处理 + 403 错误调试日志
+- `packages/electron/src/main/preload.ts` — 新增 openLoginWindow, checkLoginStatus, onLoginSuccess, onDownloadProgress, getCredentialsInfo, getFullCookies, onLog
+- `packages/electron/src/renderer/App.tsx` — 完整下载 UI（登录状态、URL 输入、下载进度、Debug 面板、日志面板）
 - `packages/electron/src/renderer/vite-env.d.ts` — 新类型声明
 
 **Phase 2 功能**：
@@ -339,9 +335,12 @@ f2 中这些算法以 JS 文件存在，通过 `PyExecJS` 执行。移植到 TS 
 | TwitterCrawler | 🟢 | fetchTweetDetail, fetchUserProfile, fetchUserTweets, fetchLikes, fetchBookmarks |
 | 响应解析 | 🟢 | 动态 instruction 索引查找，适配 API 结构变化，统一媒体解析 |
 | WebView 登录 | 🟢 | 独立窗口加载 x.com/login，登录完成自动关闭 |
-| Cookie 自动提取 | 🟢 | session.cookies.get() 提取 cookie + ct0 (X-Csrf-Token) |
+| Cookie 自动提取 | 🟢 | session.cookies.get() 提取 cookie + ct0 (X-Csrf-Token)，与浏览器 cookie 对比确认完整 |
 | 下载器 | 🟢 | 视频下载 + 图片下载 + 文案保存，支持断点续传 |
 | 下载管理 UI | 🟢 | 粘贴链接 → 下载 → 进度条显示 |
+| Cookie Debug 面板 | 🟢 | Debug 开关显示完整 cookie、ct0、Authorization 请求头，方便对比浏览器 |
+| 日志面板 | 🟢 | 界面底部黑色日志区域，实时显示 API 请求详情和 403 错误 body |
+| 403 错误调试 | 🔴 | Twitter GraphQL API 返回 403 Forbidden，正在排查原因 |
 
 ### Phase 3: 抖音平台 🔴 未开始
 
@@ -357,7 +356,8 @@ f2 中这些算法以 JS 文件存在，通过 `PyExecJS` 执行。移植到 TS 
 
 ## 下一步行动
 
-1. **Phase 2 测试** — 用户测试 WebView 登录 Twitter + Cookie 提取 + 下载推文
-2. **Phase 3** — 抖音平台适配（API + 签名 + GUI 支持）
+1. **排查 403 错误** — 确认 Twitter GraphQL API 403 Forbidden 的原因（网络/认证/hash 过期）
+2. **Phase 2 测试** — 修复 403 后用户测试 WebView 登录 Twitter + Cookie 提取 + 下载推文
+3. **Phase 3** — 抖音平台适配（API + 签名 + GUI 支持）
 
-*最后更新: 2026-04-15*
+*最后更新: 2026-04-16*

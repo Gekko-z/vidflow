@@ -16,6 +16,13 @@ interface ElectronAPI {
     ct0_preview?: string;
     cookie_length?: number;
   }>;
+  getFullCookies: () => Promise<{
+    isLoggedIn: boolean;
+    cookie?: string;
+    xCsrfToken?: string;
+    authorization?: string;
+  }>;
+  onLog: (callback: (msg: string) => void) => void;
 }
 
 declare global {

@@ -20,4 +20,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('download-progress', (_event, data) => callback(data));
   },
   getCredentialsInfo: () => ipcRenderer.invoke('get-credentials-info'),
+  getFullCookies: () => ipcRenderer.invoke('get-full-cookies'),
+  onLog: (callback: (msg: string) => void) => {
+    ipcRenderer.on('log', (_event, msg) => callback(msg));
+  },
 });

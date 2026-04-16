@@ -142,14 +142,107 @@ async function handleDownload(url: string, saveDir: string) {
     return { success: false, message: 'Not logged in to Twitter' };
   }
 
+  const log = (msg: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const line = `[${timestamp}] ${msg}`;
+    console.log(line);
+    if (mainWindow) {
+      mainWindow.webContents.send('log', line);
+    }
+  };
+
+  log('auth_token present: ' + twitterCredentials.cookie.includes('auth_token'));
+  log('ct0 present: ' + !!twitterCredentials.xCsrfToken);
+  log('cookie length: ' + twitterCredentials.cookie.length);
+  log('authorization: ' + twitterCredentials.authorization.slice(0, 30) + '...');
+
   const tweetId = extractTweetId(url);
   if (!tweetId) {
     return { success: false, message: 'Invalid Twitter URL' };
   }
+  log('tweetId: ' + tweetId);
 
   try {
+    // First, do a direct fetch to debug the 403
+    const baseUrl = `https://x.com/i/api/graphql/nBS-WpgA6ZG0CyNHD517JQ/TweetDetail`;
+    const params = new URLSearchParams({
+      variables: JSON.stringify({
+        focalTweetId: tweetId,
+        with_rux_injections: true,
+        includePromotedContent: true,
+        withCommunity: true,
+        withQuickPromoteEligibilityTweetFields: true,
+        withBirdwatchNotes: true,
+        withVoice: true,
+        rankingMode: 'Relevance',
+        referrer: 'tweet',
+        controller_data: 'DAACDAABDAABCgABAAAAAAAAAAAKAAgMseIsK1XAAAAAAAA=',
+      }),
+      features: JSON.stringify({
+        articles_preview_enabled: true,
+        c9s_tweet_anatomy_moderator_badge_enabled: true,
+        communities_web_enable_tweet_community_results_fetch: true,
+        creator_subscriptions_quote_tweet_preview_enabled: false,
+        creator_subscriptions_tweet_preview_api_enabled: true,
+        freedom_of_speech_not_reach_fetch_enabled: true,
+        graphql_is_translatable_rweb_tweet_is_translatable_enabled: true,
+        longform_notetweets_consumption_enabled: true,
+        longform_notetweets_inline_media_enabled: true,
+        longform_notetweets_rich_text_read_enabled: true,
+        responsive_web_edit_tweet_api_enabled: true,
+        responsive_web_enhance_cards_enabled: false,
+        responsive_web_graphql_exclude_directive_enabled: true,
+        responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
+        responsive_web_graphql_timeline_navigation_enabled: true,
+        responsive_web_twitter_article_tweet_consumption_enabled: true,
+        rweb_tipjar_consumption_enabled: true,
+        rweb_video_timestamps_enabled: true,
+        standardized_nudges_misinfo: true,
+        tweet_awards_web_tipping_enabled: false,
+        tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
+        tweet_with_visibility_results_prefer_gql_media_interstitial_enabled: true,
+        tweetypie_unmention_optimization_enabled: true,
+        verified_phone_label_enabled: false,
+        view_counts_everywhere_api_enabled: true,
+      }),
+      fieldToggles: JSON.stringify({
+        withArticlePlainText: false,
+        withArticleRichContentState: true,
+        withDisallowedReplyControls: false,
+        withGrokAnalyze: false,
+      }),
+    });
+    const debugUrl = `${baseUrl}?${params}`;
+
+    log('--- Direct fetch debug ---');
+    log('URL: ' + debugUrl.slice(0, 200) + '...');
+
+    const testResponse = await fetch(debugUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+        'Referer': 'https://x.com/',
+        'Accept': '*/*',
+        'Cookie': twitterCredentials.cookie,
+        'Authorization': twitterCredentials.authorization,
+        'X-Csrf-Token': twitterCredentials.xCsrfToken,
+      },
+    });
+    log('Direct fetch status: ' + testResponse.status + ' ' + testResponse.statusText);
+    const testBody = await testResponse.text();
+    if (!testResponse.ok) {
+      log('Direct fetch error body: ' + testBody);
+    } else {
+      log('Direct fetch OK, body length: ' + testBody.length);
+      log('Direct fetch body preview: ' + testBody.slice(0, 300));
+    }
+    log('--- End direct fetch debug ---');
+
+    // Now proceed with the crawler
     const crawler = new TwitterCrawler(twitterCredentials);
+    log('Fetching tweet detail via crawler...');
     const rawData = await crawler.fetchTweetDetail(tweetId);
+    log('Crawler response: ' + JSON.stringify(rawData).slice(0, 500));
     const tweetData = parseTweetDetail(rawData);
 
     if (!tweetData) {
@@ -311,5 +404,17 @@ ipcMain.handle('get-credentials-info', async () => {
     auth_token_preview: authToken || '(not found)',
     ct0_preview: twitterCredentials.xCsrfToken.slice(0, 20) + '...',
     cookie_length: twitterCredentials.cookie.length,
+  };
+});
+
+ipcMain.handle('get-full-cookies', async () => {
+  if (!twitterCredentials) {
+    return { isLoggedIn: false, cookie: '', xCsrfToken: '', authorization: '' };
+  }
+  return {
+    isLoggedIn: true,
+    cookie: twitterCredentials.cookie,
+    xCsrfToken: twitterCredentials.xCsrfToken,
+    authorization: twitterCredentials.authorization,
   };
 });

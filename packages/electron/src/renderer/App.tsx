@@ -14,6 +14,9 @@ function App() {
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
   const [credentialsInfo, setCredentialsInfo] = useState<Record<string, string> | null>(null);
+  const [fullCookies, setFullCookies] = useState<{ cookie: string; xCsrfToken: string; authorization: string } | null>(null);
+  const [logs, setLogs] = useState<string[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
 
   useEffect(() => {
     window.electronAPI.checkLoginStatus().then(({ isLoggedIn }) => {
@@ -63,6 +66,11 @@ function App() {
       if (data.state === 'completed' || data.state === 'failed') {
         setIsDownloading(false);
       }
+    });
+
+    // Log listener
+    window.electronAPI.onLog((msg) => {
+      setLogs((prev) => [...prev, msg]);
     });
   }, []);
 
@@ -124,10 +132,39 @@ function App() {
             Login
           </button>
         )}
+        <button
+          onClick={() => {
+            setShowDebug((v) => !v);
+            window.electronAPI.getCredentialsInfo().then((info) => {
+              setCredentialsInfo(info as unknown as Record<string, string>);
+            });
+            window.electronAPI.getFullCookies().then((info) => {
+              if (info.isLoggedIn) {
+                setFullCookies({
+                  cookie: info.cookie || '',
+                  xCsrfToken: info.xCsrfToken || '',
+                  authorization: info.authorization || '',
+                });
+              }
+            });
+          }}
+          style={{
+            padding: '6px 16px',
+            background: showDebug ? '#f59e0b' : '#6b7280',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 6,
+            cursor: 'pointer',
+            fontSize: 13,
+            marginLeft: 'auto',
+          }}
+        >
+          {showDebug ? 'Hide Debug' : 'Debug'}
+        </button>
       </div>
 
       {/* Cookie debug info */}
-      {isLoggedIn && credentialsInfo && (
+      {showDebug && credentialsInfo && (
         <div
           style={{
             padding: 12,
@@ -144,10 +181,66 @@ function App() {
           </div>
           <div>Cookies: {credentialsInfo.cookie_length || 0} bytes</div>
           <div>auth_token: {credentialsInfo.auth_token_preview || '(not found)'}</div>
-          <div>ct0: {credentialsInfo.ct0_preview || '(not found)'}</div>
+          <div>ct0 (X-Csrf-Token): {credentialsInfo.ct0_preview || '(not found)'}</div>
           <div style={{ marginTop: 4, wordBreak: 'break-all' }}>
             Cookie names: {(credentialsInfo.cookieNames as string[] | undefined)?.join(', ') || 'N/A'}
           </div>
+          {fullCookies && (
+            <>
+              <div style={{ marginTop: 8, fontWeight: 600, fontSize: 13 }}>
+                Full Cookie (copy to compare with browser):
+              </div>
+              <div
+                style={{
+                  marginTop: 4,
+                  padding: 8,
+                  background: '#f9fafb',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 4,
+                  maxHeight: 150,
+                  overflow: 'auto',
+                  wordBreak: 'break-all',
+                  whiteSpace: 'pre-wrap',
+                  fontSize: 11,
+                  userSelect: 'all',
+                }}
+              >
+                {fullCookies.cookie}
+              </div>
+              <div style={{ marginTop: 8, fontWeight: 600, fontSize: 13 }}>
+                X-Csrf-Token (ct0):
+              </div>
+              <div
+                style={{
+                  marginTop: 4,
+                  padding: 8,
+                  background: '#f9fafb',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 4,
+                  wordBreak: 'break-all',
+                  userSelect: 'all',
+                }}
+              >
+                {fullCookies.xCsrfToken}
+              </div>
+              <div style={{ marginTop: 8, fontWeight: 600, fontSize: 13 }}>
+                Authorization (Bearer token):
+              </div>
+              <div
+                style={{
+                  marginTop: 4,
+                  padding: 8,
+                  background: '#f9fafb',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 4,
+                  wordBreak: 'break-all',
+                  userSelect: 'all',
+                }}
+              >
+                {fullCookies.authorization}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -262,6 +355,35 @@ function App() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Log panel */}
+      {logs.length > 0 && (
+        <div>
+          <h3 style={{ fontSize: 16, marginBottom: 8 }}>Logs</h3>
+          <div
+            style={{
+              padding: 12,
+              background: '#1e1e1e',
+              color: '#d4d4d4',
+              borderRadius: 8,
+              fontFamily: 'monospace',
+              fontSize: 11,
+              maxHeight: 300,
+              overflow: 'auto',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all',
+            }}
+          >
+            {logs.map((log, i) => (
+              <div key={i} style={{ lineHeight: 1.6 }}>
+                {log.includes('error') || log.includes('Error') || log.includes('403')
+                  ? `\x1b[31m${log}\x1b[0m`
+                  : log}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
